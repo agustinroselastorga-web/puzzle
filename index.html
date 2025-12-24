@@ -1,228 +1,163 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Doble Puzzle – Anagrama + Unblock</title>
+<meta charset="UTF-8">
+<title>Puzzle Secuencial</title>
 
-  <style>
-    body {
-      background: #0f0f0f;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  background: #0f0f0f;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    .screen {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-    }
+/* ---------- GENERALES ---------- */
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
 
-    .active {
-      display: flex;
-    }
+.screen.active {
+  display: flex;
+}
 
-    /* ---------- ANAGRAMA ---------- */
-    .letters {
-      display: flex;
-      gap: 10px;
-    }
+/* ---------- ANAGRAMA ---------- */
+#letters, #answer {
+  display: flex;
+  gap: 10px;
+}
 
-    .letter {
-      background: #1e88e5;
-      width: 60px;
-      height: 60px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 26px;
-      font-weight: bold;
-      cursor: pointer;
-      user-select: none;
-    }
+.letter {
+  width: 60px;
+  height: 60px;
+  background: #1e88e5;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+}
 
-    #answer {
-      min-height: 60px;
-      display: flex;
-      gap: 10px;
-    }
+#answer .letter {
+  background: #43a047;
+}
 
-    #error {
-      color: #e53935;
-      display: none;
-    }
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
 
-    /* ---------- UNBLOCK ---------- */
-    #board {
-      display: grid;
-      grid-template-columns: repeat(6, 60px);
-      grid-template-rows: repeat(6, 60px);
-      gap: 4px;
-      background: #222;
-      padding: 6px;
-      border-radius: 12px;
-    }
+#error {
+  color: #e53935;
+  display: none;
+}
 
-    .piece {
-      border-radius: 10px;
-      cursor: pointer;
-      user-select: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-    }
+/* ---------- UNBLOCK ---------- */
+#board {
+  display: grid;
+  grid-template-columns: repeat(6, 60px);
+  grid-template-rows: repeat(6, 60px);
+  gap: 4px;
+  background: #222;
+  padding: 6px;
+  border-radius: 12px;
+}
 
-    .red { background: #e53935; }
-    .blue { background: #1e88e5; }
-    .yellow { background: #fbc02d; color: #000; }
+.piece {
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  user-select: none;
+}
 
-    #win {
-      display: none;
-      margin-top: 20px;
-      text-align: center;
-    }
+.red { background: #e53935; }
+.blue { background: #1e88e5; }
+.yellow { background: #fbc02d; color: #000; }
 
-    a { color: #4fc3f7; font-size: 18px; }
-  </style>
+#win {
+  display: none;
+  text-align: center;
+}
+
+a {
+  color: #4fc3f7;
+  font-size: 18px;
+}
+</style>
 </head>
 
 <body>
 
 <!-- ================= ANAGRAMA ================= -->
-<div id="anagram-game" class="screen active">
-  <h2>Ordena la palabra</h2>
+<div id="anagram" class="screen active">
+  <h2>Configuración incompleta</h2>
+  <p>Reordena lo necesario para construir el escenario</p>
 
-  <div class="letters" id="letters"></div>
-
+  <div id="letters"></div>
   <div id="answer"></div>
 
-  <button onclick="checkAnagram()">Confirmar</button>
-  <div id="error">Incorrecto</div>
+  <button id="confirm">Confirmar</button>
+  <div id="error">Orden incorrecto</div>
 </div>
 
 <!-- ================= UNBLOCK ================= -->
-<div id="unblock-game" class="screen">
+<div id="unblock" class="screen">
   <h2>Saca el bloque rojo ➜</h2>
 
   <div id="board"></div>
 
   <div id="win">
     <h3>Puzzle resuelto 🧠</h3>
-    <a href="https://youtube.com/watch?v=UlKgy3loYr0&feature=shared" target="_blank">Ir al premio</a>
+    <a href="https://youtube.com/watch?v=UlKgy3loYr0&feature=shared" target="_blank">
+      Ir al premio
+    </a>
   </div>
 </div>
 
 <script>
-/* ========== ANAGRAMA ========== */
-const correctWord = "SALIDA";
-const scrambled = ["A","S","L","I","D","A"];
+/* ================= ANAGRAMA ================= */
+const startWord = "NECESARIO";
+const targetWord = "ESCENARIO";
 
 const lettersDiv = document.getElementById("letters");
 const answerDiv = document.getElementById("answer");
 const errorDiv = document.getElementById("error");
 
-scrambled.forEach(l => {
-  const el = document.createElement("div");
-  el.className = "letter";
-  el.textContent = l;
-  el.onclick = () => {
-    answerDiv.appendChild(el);
-  };
-  lettersDiv.appendChild(el);
-});
+let letters = startWord.split("").sort(() => Math.random() - 0.5);
 
-function checkAnagram() {
-  const result = [...answerDiv.children].map(e => e.textContent).join("");
-  if (result === correctWord) {
-    document.getElementById("anagram-game").classList.remove("active");
-    document.getElementById("unblock-game").classList.add("active");
-  } else {
-    errorDiv.style.display = "block";
-    answerDiv.innerHTML = "";
-    lettersDiv.innerHTML = "";
-    scrambled.sort(() => Math.random() - 0.5).forEach(l => {
-      const el = document.createElement("div");
-      el.className = "letter";
-      el.textContent = l;
-      el.onclick = () => answerDiv.appendChild(el);
-      lettersDiv.appendChild(el);
-    });
-  }
-}
+function renderAnagram() {
+  lettersDiv.innerHTML = "";
+  answerDiv.innerHTML = "";
+  errorDiv.style.display = "none";
 
-/* ========== UNBLOCK (TU CÓDIGO) ========== */
-const board = document.getElementById('board');
-const win = document.getElementById('win');
-
-const pieces = [
-  { id: 'R', color: 'red', x: 1, y: 2, w: 2, h: 1 },
-  { id: 'A', color: 'blue', x: 0, y: 0, w: 2, h: 1 },
-  { id: 'B', color: 'blue', x: 3, y: 0, w: 2, h: 1 },
-  { id: 'C', color: 'yellow', x: 2, y: 1, w: 1, h: 2 },
-  { id: 'D', color: 'yellow', x: 4, y: 1, w: 1, h: 2 },
-  { id: 'E', color: 'blue', x: 0, y: 4, w: 2, h: 1 },
-  { id: 'F', color: 'blue', x: 3, y: 4, w: 2, h: 1 },
-];
-
-let selected = null;
-
-function draw() {
-  board.innerHTML = '';
-  pieces.forEach(p => {
-    const el = document.createElement('div');
-    el.className = `piece ${p.color}`;
-    el.style.gridColumn = `${p.x + 1} / span ${p.w}`;
-    el.style.gridRow = `${p.y + 1} / span ${p.h}`;
-    el.textContent = p.id === 'R' ? '▶' : '';
-    el.onclick = () => selected = p;
-    board.appendChild(el);
+  letters.forEach(letter => {
+    const el = document.createElement("div");
+    el.className = "letter";
+    el.textContent = letter;
+    el.onclick = () => answerDiv.appendChild(el);
+    lettersDiv.appendChild(el);
   });
 }
 
-function canMove(p, dx, dy) {
-  const nx = p.x + dx;
-  const ny = p.y + dy;
-  if (nx < 0 || ny < 0 || nx + p.w > 6 || ny + p.h > 6) return false;
-
-  return !pieces.some(o => o !== p &&
-    nx < o.x + o.w && nx + p.w > o.x &&
-    ny < o.y + o.h && ny + p.h > o.y
-  );
-}
-
-document.addEventListener('keydown', e => {
-  if (!selected) return;
-  let dx = 0, dy = 0;
-  if (e.key === 'ArrowLeft') dx = -1;
-  if (e.key === 'ArrowRight') dx = 1;
-  if (e.key === 'ArrowUp') dy = -1;
-  if (e.key === 'ArrowDown') dy = 1;
-
-  if (canMove(selected, dx, dy)) {
-    selected.x += dx;
-    selected.y += dy;
-    draw();
-    checkWin();
-  }
-});
-
-function checkWin() {
-  const red = pieces.find(p => p.id === 'R');
-  if (red.x + red.w === 6) {
-    board.style.display = 'none';
-    win.style.display = 'block';
-  }
-}
-
-draw();
-</script>
-
-</body>
-</html>
+document.getElementById("confirm").onclick = () => {
+  const result = [...answerDiv.children].map(l => l.textContent).join("");
+  if (result === targetWord) {
+    document.getElementById("anagram").classList.remove("active");
+    document.getElementById("unblock").classList.add("active");
+    draw
