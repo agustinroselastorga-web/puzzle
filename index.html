@@ -16,7 +16,6 @@ body {
   justify-content: center;
 }
 
-/* ---------- GENERALES ---------- */
 .screen {
   display: none;
   flex-direction: column;
@@ -94,9 +93,8 @@ a {
 </style>
 </head>
 
-<body>
+<body tabindex="0">
 
-<!-- ================= ANAGRAMA ================= -->
 <div id="anagram" class="screen active">
   <h2>Configuración incompleta</h2>
   <p>Reordena lo necesario para construir el escenario</p>
@@ -106,7 +104,6 @@ a {
   <div id="error">Orden incorrecto</div>
 </div>
 
-<!-- ================= UNBLOCK ================= -->
 <div id="unblock" class="screen">
   <h2>Saca el bloque rojo ➜</h2>
 
@@ -121,7 +118,7 @@ a {
 </div>
 
 <script>
-/* ================= ANAGRAMA ================= */
+/* ===== ANAGRAMA ===== */
 const startWord = "NECESARIO";
 const targetWord = "ESCENARIO";
 
@@ -137,32 +134,29 @@ function renderWord() {
     const el = document.createElement("div");
     el.className = "letter";
     el.textContent = l;
-
     if (i === selectedIndex) el.classList.add("selected");
-
     el.onclick = () => handleClick(i);
     wordDiv.appendChild(el);
   });
 }
 
-function handleClick(index) {
+function handleClick(i) {
   if (selectedIndex === null) {
-    selectedIndex = index;
+    selectedIndex = i;
   } else {
-    // swap letras
-    [letters[selectedIndex], letters[index]] =
-    [letters[index], letters[selectedIndex]];
+    [letters[selectedIndex], letters[i]] =
+    [letters[i], letters[selectedIndex]];
     selectedIndex = null;
   }
   renderWord();
 }
 
 document.getElementById("confirm").onclick = () => {
-  const result = letters.join("");
-  if (result === targetWord) {
+  if (letters.join("") === targetWord) {
     document.getElementById("anagram").classList.remove("active");
     document.getElementById("unblock").classList.add("active");
     drawBoard();
+    document.body.focus();
   } else {
     errorDiv.style.display = "block";
   }
@@ -170,7 +164,7 @@ document.getElementById("confirm").onclick = () => {
 
 renderWord();
 
-/* ================= UNBLOCK ================= */
+/* ===== UNBLOCK ===== */
 const board = document.getElementById("board");
 const win = document.getElementById("win");
 
