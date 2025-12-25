@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Puzzle Secuencial</title>
 
 <style>
@@ -35,14 +36,14 @@ body {
 }
 
 .letter {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   background: #1e88e5;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: bold;
   cursor: pointer;
   user-select: none;
@@ -59,28 +60,26 @@ body {
 
 /* ---------- UNBLOCK ---------- */
 #board {
-  display: grid;
-  grid-template-columns: repeat(6, 60px);
-  grid-template-rows: repeat(6, 60px);
-  gap: 4px;
+  position: relative;
+  width: 360px;
+  height: 360px;
   background: #222;
-  padding: 6px;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
-.piece {
+.block {
+  position: absolute;
   border-radius: 10px;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  user-select: none;
+  touch-action: none;
 }
 
 .red { background: #e53935; }
 .blue { background: #1e88e5; }
-.yellow { background: #fbc02d; color: #000; }
+.yellow { background: #fbc02d; color:#000; }
 
 #win {
   display: none;
@@ -96,7 +95,7 @@ a {
 
 <body>
 
-<!-- ================= ANAGRAMA ================= -->
+<!-- ========== ANAGRAMA ========== -->
 <div id="anagram" class="screen active">
   <h2>Configuración incompleta</h2>
   <p>Reordena lo necesario para construir el escenario</p>
@@ -106,10 +105,9 @@ a {
   <div id="error">Orden incorrecto</div>
 </div>
 
-<!-- ================= UNBLOCK ================= -->
+<!-- ========== UNBLOCK ========== -->
 <div id="unblock" class="screen">
   <h2>Saca el bloque rojo ➜</h2>
-
   <div id="board"></div>
 
   <div id="win">
@@ -121,12 +119,11 @@ a {
 </div>
 
 <script>
-/* ================= ANAGRAMA ================= */
+/* ========== ANAGRAMA ========== */
 const startWord = "NECESARIO";
 const targetWord = "ESCENARIO";
-
 let letters = startWord.split("");
-let selectedIndex = null;
+let selected = null;
 
 const wordDiv = document.getElementById("word");
 const errorDiv = document.getElementById("error");
@@ -137,32 +134,24 @@ function renderWord() {
     const el = document.createElement("div");
     el.className = "letter";
     el.textContent = l;
-
-    if (i === selectedIndex) el.classList.add("selected");
-
-    el.onclick = () => handleClick(i);
+    if (i === selected) el.classList.add("selected");
+    el.onclick = () => {
+      if (selected === null) selected = i;
+      else {
+        [letters[selected], letters[i]] = [letters[i], letters[selected]];
+        selected = null;
+      }
+      renderWord();
+    };
     wordDiv.appendChild(el);
   });
 }
 
-function handleClick(index) {
-  if (selectedIndex === null) {
-    selectedIndex = index;
-  } else {
-    // swap letras
-    [letters[selectedIndex], letters[index]] =
-    [letters[index], letters[selectedIndex]];
-    selectedIndex = null;
-  }
-  renderWord();
-}
-
 document.getElementById("confirm").onclick = () => {
-  const result = letters.join("");
-  if (result === targetWord) {
+  if (letters.join("") === targetWord) {
     document.getElementById("anagram").classList.remove("active");
     document.getElementById("unblock").classList.add("active");
-    drawBoard();
+    initBlocks();
   } else {
     errorDiv.style.display = "block";
   }
@@ -170,69 +159,80 @@ document.getElementById("confirm").onclick = () => {
 
 renderWord();
 
-/* ================= UNBLOCK ================= */
+/* ========== UNBLOCK TOUCH ========== */
 const board = document.getElementById("board");
 const win = document.getElementById("win");
+const size = 60;
 
-const pieces = [
-  { id:"R", color:"red",    x:1, y:2, w:2, h:1 },
-  { id:"A", color:"blue",   x:0, y:0, w:2, h:1 },
-  { id:"B", color:"blue",   x:3, y:0, w:2, h:1 },
-  { id:"C", color:"yellow", x:2, y:1, w:1, h:2 },
-  { id:"D", color:"yellow", x:4, y:1, w:1, h:2 },
-  { id:"E", color:"blue",   x:0, y:4, w:2, h:1 },
-  { id:"F", color:"blue",   x:3, y:4, w:2, h:1 }
+const blocks = [
+  {id:"R",x:1,y:2,w:2,h:1,c:"red"},
+  {id:"A",x:0,y:0,w:2,h:1,c:"blue"},
+  {id:"B",x:3,y:0,w:2,h:1,c:"blue"},
+  {id:"C",x:2,y:1,w:1,h:2,c:"yellow"},
+  {id:"D",x:4,y:1,w:1,h:2,c:"yellow"},
+  {id:"E",x:0,y:4,w:2,h:1,c:"blue"},
+  {id:"F",x:3,y:4,w:2,h:1,c:"blue"}
 ];
 
-let selected = null;
-
-function drawBoard() {
+function initBlocks() {
   board.innerHTML = "";
-  pieces.forEach(p => {
+  blocks.forEach(b => {
     const el = document.createElement("div");
-    el.className = `piece ${p.color}`;
-    el.style.gridColumn = `${p.x + 1} / span ${p.w}`;
-    el.style.gridRow = `${p.y + 1} / span ${p.h}`;
-    el.textContent = p.id === "R" ? "▶" : "";
-    el.onclick = () => selected = p;
+    el.className = `block ${b.c}`;
+    el.style.width = b.w * size + "px";
+    el.style.height = b.h * size + "px";
+    el.style.left = b.x * size + "px";
+    el.style.top = b.y * size + "px";
+    el.textContent = b.id === "R" ? "▶" : "";
     board.appendChild(el);
+
+    let startX, startY;
+
+    el.addEventListener("pointerdown", e => {
+      startX = e.clientX;
+      startY = e.clientY;
+      el.setPointerCapture(e.pointerId);
+    });
+
+    el.addEventListener("pointermove", e => {
+      if (startX == null) return;
+      let dx = e.clientX - startX;
+      let dy = e.clientY - startY;
+
+      if (b.w > b.h) dy = 0; else dx = 0;
+
+      const nx = Math.round((b.x * size + dx) / size);
+      const ny = Math.round((b.y * size + dy) / size);
+
+      if (canMove(b, nx, ny)) {
+        b.x = nx;
+        b.y = ny;
+        el.style.left = b.x * size + "px";
+        el.style.top = b.y * size + "px";
+        checkWin();
+      }
+    });
+
+    el.addEventListener("pointerup", () => {
+      startX = startY = null;
+    });
   });
 }
 
-function canMove(p, dx, dy) {
-  const nx = p.x + dx;
-  const ny = p.y + dy;
-  if (nx < 0 || ny < 0 || nx + p.w > 6 || ny + p.h > 6) return false;
-
-  return !pieces.some(o =>
-    o !== p &&
+function canMove(b, nx, ny) {
+  if (nx < 0 || ny < 0 || nx + b.w > 6 || ny + b.h > 6) return false;
+  return !blocks.some(o =>
+    o !== b &&
     nx < o.x + o.w &&
-    nx + p.w > o.x &&
+    nx + b.w > o.x &&
     ny < o.y + o.h &&
-    ny + p.h > o.y
+    ny + b.h > o.y
   );
 }
 
-document.addEventListener("keydown", e => {
-  if (!selected) return;
-
-  let dx = 0, dy = 0;
-  if (e.key === "ArrowLeft") dx = -1;
-  if (e.key === "ArrowRight") dx = 1;
-  if (e.key === "ArrowUp") dy = -1;
-  if (e.key === "ArrowDown") dy = 1;
-
-  if (canMove(selected, dx, dy)) {
-    selected.x += dx;
-    selected.y += dy;
-    drawBoard();
-    checkWin();
-  }
-});
-
 function checkWin() {
-  const red = pieces.find(p => p.id === "R");
-  if (red.x + red.w === 6) {
+  const r = blocks.find(b => b.id === "R");
+  if (r.x + r.w === 6) {
     board.style.display = "none";
     win.style.display = "block";
   }
