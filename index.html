@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Puzzle Secuencial</title>
+<title>Puzzle Anagrama</title>
 
 <style>
 body {
@@ -56,33 +56,8 @@ body {
   display: none;
 }
 
-/* ---------- UNBLOCK ---------- */
-#board {
-  display: grid;
-  grid-template-columns: repeat(6, 60px);
-  grid-template-rows: repeat(6, 60px);
-  gap: 4px;
-  background: #222;
-  padding: 6px;
-  border-radius: 12px;
-}
-
-.piece {
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  user-select: none;
-}
-
-.red { background: #e53935; }
-.blue { background: #1e88e5; }
-.yellow { background: #fbc02d; color: #000; }
-
+/* ---------- PREMIO ---------- */
 #win {
-  display: none;
   text-align: center;
 }
 
@@ -95,6 +70,7 @@ a {
 
 <body tabindex="0">
 
+<!-- ================= ANAGRAMA ================= -->
 <div id="anagram" class="screen active">
   <h2>Configuración incompleta</h2>
   <p>Reordena lo necesario para construir el escenario</p>
@@ -104,17 +80,12 @@ a {
   <div id="error">Orden incorrecto</div>
 </div>
 
-<div id="unblock" class="screen">
-  <h2>Saca el bloque rojo ➜</h2>
-
-  <div id="board"></div>
-
-  <div id="win">
-    <h3>Puzzle resuelto 🧠</h3>
-    <a href="https://youtube.com/watch?v=UlKgy3loYr0&feature=shared" target="_blank">
-      Ir al premio
-    </a>
-  </div>
+<!-- ================= PREMIO ================= -->
+<div id="win" class="screen">
+  <h3>Puzzle resuelto 🧠</h3>
+  <a href="https://youtube.com/watch?v=UlKgy3loYr0&feature=shared" target="_blank">
+    Ir al premio
+  </a>
 </div>
 
 <script>
@@ -154,83 +125,13 @@ function handleClick(i) {
 document.getElementById("confirm").onclick = () => {
   if (letters.join("") === targetWord) {
     document.getElementById("anagram").classList.remove("active");
-    document.getElementById("unblock").classList.add("active");
-    drawBoard();
-    document.body.focus();
+    document.getElementById("win").classList.add("active");
   } else {
     errorDiv.style.display = "block";
   }
 };
 
 renderWord();
-
-/* ===== UNBLOCK ===== */
-const board = document.getElementById("board");
-const win = document.getElementById("win");
-
-const pieces = [
-  { id:"R", color:"red",    x:1, y:2, w:2, h:1 },
-  { id:"A", color:"blue",   x:0, y:0, w:2, h:1 },
-  { id:"B", color:"blue",   x:3, y:0, w:2, h:1 },
-  { id:"C", color:"yellow", x:2, y:1, w:1, h:2 },
-  { id:"D", color:"yellow", x:4, y:1, w:1, h:2 },
-  { id:"E", color:"blue",   x:0, y:4, w:2, h:1 },
-  { id:"F", color:"blue",   x:3, y:4, w:2, h:1 }
-];
-
-let selected = null;
-
-function drawBoard() {
-  board.innerHTML = "";
-  pieces.forEach(p => {
-    const el = document.createElement("div");
-    el.className = `piece ${p.color}`;
-    el.style.gridColumn = `${p.x + 1} / span ${p.w}`;
-    el.style.gridRow = `${p.y + 1} / span ${p.h}`;
-    el.textContent = p.id === "R" ? "▶" : "";
-    el.onclick = () => selected = p;
-    board.appendChild(el);
-  });
-}
-
-function canMove(p, dx, dy) {
-  const nx = p.x + dx;
-  const ny = p.y + dy;
-  if (nx < 0 || ny < 0 || nx + p.w > 6 || ny + p.h > 6) return false;
-
-  return !pieces.some(o =>
-    o !== p &&
-    nx < o.x + o.w &&
-    nx + p.w > o.x &&
-    ny < o.y + o.h &&
-    ny + p.h > o.y
-  );
-}
-
-document.addEventListener("keydown", e => {
-  if (!selected) return;
-
-  let dx = 0, dy = 0;
-  if (e.key === "ArrowLeft") dx = -1;
-  if (e.key === "ArrowRight") dx = 1;
-  if (e.key === "ArrowUp") dy = -1;
-  if (e.key === "ArrowDown") dy = 1;
-
-  if (canMove(selected, dx, dy)) {
-    selected.x += dx;
-    selected.y += dy;
-    drawBoard();
-    checkWin();
-  }
-});
-
-function checkWin() {
-  const red = pieces.find(p => p.id === "R");
-  if (red.x + red.w === 6) {
-    board.style.display = "none";
-    win.style.display = "block";
-  }
-}
 </script>
 
 </body>
