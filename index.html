@@ -21,7 +21,7 @@ body {
   display: none;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
 }
 
 .screen.active {
@@ -29,35 +29,27 @@ body {
 }
 
 /* ---------- ANAGRAMA ---------- */
-#letters, #answer {
+#word {
   display: flex;
   gap: 10px;
 }
 
 .letter {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   background: #1e88e5;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: bold;
   cursor: pointer;
   user-select: none;
 }
 
-#answer .letter {
-  background: #43a047;
-}
-
-button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
+.letter.selected {
+  outline: 3px solid #fff;
 }
 
 #error {
@@ -109,9 +101,7 @@ a {
   <h2>Configuración incompleta</h2>
   <p>Reordena lo necesario para construir el escenario</p>
 
-  <div id="letters"></div>
-  <div id="answer"></div>
-
+  <div id="word"></div>
   <button id="confirm">Confirmar</button>
   <div id="error">Orden incorrecto</div>
 </div>
@@ -135,29 +125,119 @@ a {
 const startWord = "NECESARIO";
 const targetWord = "ESCENARIO";
 
-const lettersDiv = document.getElementById("letters");
-const answerDiv = document.getElementById("answer");
+let letters = startWord.split("");
+let selectedIndex = null;
+
+const wordDiv = document.getElementById("word");
 const errorDiv = document.getElementById("error");
 
-let letters = startWord.split("").sort(() => Math.random() - 0.5);
-
-function renderAnagram() {
-  lettersDiv.innerHTML = "";
-  answerDiv.innerHTML = "";
-  errorDiv.style.display = "none";
-
-  letters.forEach(letter => {
+function renderWord() {
+  wordDiv.innerHTML = "";
+  letters.forEach((l, i) => {
     const el = document.createElement("div");
     el.className = "letter";
-    el.textContent = letter;
-    el.onclick = () => answerDiv.appendChild(el);
-    lettersDiv.appendChild(el);
+    el.textContent = l;
+
+    if (i === selectedIndex) el.classList.add("selected");
+
+    el.onclick = () => handleClick(i);
+    wordDiv.appendChild(el);
   });
 }
 
+function handleClick(index) {
+  if (selectedIndex === null) {
+    selectedIndex = index;
+  } else {
+    // swap letras
+    [letters[selectedIndex], letters[index]] =
+    [letters[index], letters[selectedIndex]];
+    selectedIndex = null;
+  }
+  renderWord();
+}
+
 document.getElementById("confirm").onclick = () => {
-  const result = [...answerDiv.children].map(l => l.textContent).join("");
+  const result = letters.join("");
   if (result === targetWord) {
     document.getElementById("anagram").classList.remove("active");
     document.getElementById("unblock").classList.add("active");
-    draw
+    drawBoard();
+  } else {
+    errorDiv.style.display = "block";
+  }
+};
+
+renderWord();
+
+/* ================= UNBLOCK ================= */
+const board = document.getElementById("board");
+const win = document.getElementById("win");
+
+const pieces = [
+  { id:"R", color:"red",    x:1, y:2, w:2, h:1 },
+  { id:"A", color:"blue",   x:0, y:0, w:2, h:1 },
+  { id:"B", color:"blue",   x:3, y:0, w:2, h:1 },
+  { id:"C", color:"yellow", x:2, y:1, w:1, h:2 },
+  { id:"D", color:"yellow", x:4, y:1, w:1, h:2 },
+  { id:"E", color:"blue",   x:0, y:4, w:2, h:1 },
+  { id:"F", color:"blue",   x:3, y:4, w:2, h:1 }
+];
+
+let selected = null;
+
+function drawBoard() {
+  board.innerHTML = "";
+  pieces.forEach(p => {
+    const el = document.createElement("div");
+    el.className = `piece ${p.color}`;
+    el.style.gridColumn = `${p.x + 1} / span ${p.w}`;
+    el.style.gridRow = `${p.y + 1} / span ${p.h}`;
+    el.textContent = p.id === "R" ? "▶" : "";
+    el.onclick = () => selected = p;
+    board.appendChild(el);
+  });
+}
+
+function canMove(p, dx, dy) {
+  const nx = p.x + dx;
+  const ny = p.y + dy;
+  if (nx < 0 || ny < 0 || nx + p.w > 6 || ny + p.h > 6) return false;
+
+  return !pieces.some(o =>
+    o !== p &&
+    nx < o.x + o.w &&
+    nx + p.w > o.x &&
+    ny < o.y + o.h &&
+    ny + p.h > o.y
+  );
+}
+
+document.addEventListener("keydown", e => {
+  if (!selected) return;
+
+  let dx = 0, dy = 0;
+  if (e.key === "ArrowLeft") dx = -1;
+  if (e.key === "ArrowRight") dx = 1;
+  if (e.key === "ArrowUp") dy = -1;
+  if (e.key === "ArrowDown") dy = 1;
+
+  if (canMove(selected, dx, dy)) {
+    selected.x += dx;
+    selected.y += dy;
+    drawBoard();
+    checkWin();
+  }
+});
+
+function checkWin() {
+  const red = pieces.find(p => p.id === "R");
+  if (red.x + red.w === 6) {
+    board.style.display = "none";
+    win.style.display = "block";
+  }
+}
+</script>
+
+</body>
+</html>
